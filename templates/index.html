@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>File Share - Upload & Download ZIP</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 500px;
+            width: 100%;
+            padding: 40px;
+        }
+
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .section {
+            margin-bottom: 30px;
+        }
+
+        .section-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+        }
+
+        .section-title::before {
+            content: '';
+            display: inline-block;
+            width: 4px;
+            height: 4px;
+            background: #667eea;
+            border-radius: 50%;
+            margin-right: 10px;
+        }
+
+        .upload-area {
+            border: 2px dashed #667eea;
+            border-radius: 8px;
+            padding: 30px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: #f8f9ff;
+        }
+
+        .upload-area:hover {
+            border-color: #764ba2;
+            background: #f0f2ff;
+        }
+
+        .upload-area.drag-over {
+            border-color: #764ba2;
+            background: #e8ecff;
+            transform: scale(1.02);
+        }
+
+        .upload-icon {
+            font-size: 40px;
+            margin-bottom: 10px;
+        }
+
+        .upload-text {
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .upload-subtext {
+            font-size: 12px;
+            color: #999;
+        }
+
+        #fileInput {
+            display: none;
+        }
+
+        .file-input-label {
+            display: inline-block;
+            margin-top: 10px;
+            padding: 8px 16px;
+            background: #667eea;
+            color: white;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.3s ease;
+        }
+
+        .file-input-label:hover {
+            background: #764ba2;
+        }
+
+        .status-box {
+            background: #f0f2ff;
+            border-left: 4px solid #667eea;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+            display: none;
+        }
+
+        .status-box.show {
+            display: block;
+        }
+
+        .status-box.success {
+            background: #e8f5e9;
+            border-left-color: #4caf50;
+        }
+
+        .status-box.error {
+            background: #ffebee;
+            border-left-color: #f44336;
+        }
+
+        .status-box.info {
+            background: #e3f2fd;
+            border-left-color: #2196f3;
+        }
+
+        .status-text {
+            color: #333;
+            font-size: 14px;
+        }
+
+        .status-box.success .status-text {
+            color: #2e7d32;
+        }
+
+        .status-box.error .status-text {
+            color: #c62828;
+        }
+
+        .status-box.info .status-text {
+            color: #1565c0;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        button {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-download {
+            background: #4caf50;
+            color: white;
+        }
+
+        .btn-download:hover {
+            background: #45a049;
+        }
+
+        .btn-download:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .btn-clear {
+            background: #f44336;
+            color: white;
+        }
+
+        .btn-clear:hover {
+            background: #da190b;
+        }
+
+        .btn-clear:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .file-info {
+            background: #f5f5f5;
+            padding: 15px;
+            border-radius: 6px;
+            margin-top: 15px;
+            display: none;
+        }
+
+        .file-info.show {
+            display: block;
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        .info-label {
+            color: #666;
+            font-weight: 600;
+        }
+
+        .info-value {
+            color: #333;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid #f3f3f3;
+            border-top: 2px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 8px;
+            vertical-align: middle;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📦 File Share</h1>
+        <p class="subtitle">Upload ZIP files and share them instantly</p>
+
+        <!-- Upload Section -->
+        <div class="section">
+            <div class="section-title">Upload</div>
+            <div class="upload-area" id="uploadArea">
+                <div class="upload-icon">📁</div>
+                <div class="upload-text">Drag and drop your ZIP file here</div>
+                <div class="upload-subtext">or click to browse</div>
+                <label for="fileInput" class="file-input-label">Choose File</label>
+                <input type="file" id="fileInput" accept=".zip" />
+            </div>
+        </div>
+
+        <!-- Status Messages -->
+        <div class="status-box" id="statusBox">
+            <div class="status-text" id="statusText"></div>
+        </div>
+
+        <!-- File Info -->
+        <div class="file-info" id="fileInfo">
+            <div class="info-row">
+                <span class="info-label">📄 Filename:</span>
+                <span class="info-value" id="infoFilename">-</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">💾 Size:</span>
+                <span class="info-value" id="infoSize">-</span>
+            </div>
+        </div>
+
+        <!-- Download Section -->
+        <div class="section">
+            <div class="section-title">Download</div>
+            <div class="button-group">
+                <button class="btn-download" id="downloadBtn" disabled>⬇️ Download</button>
+                <button class="btn-clear" id="clearBtn" disabled>🗑️ Clear</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const statusBox = document.getElementById('statusBox');
+        const statusText = document.getElementById('statusText');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const clearBtn = document.getElementById('clearBtn');
+        const fileInfo = document.getElementById('fileInfo');
+
+        // Upload area click
+        uploadArea.addEventListener('click', () => fileInput.click());
+
+        // Drag and drop
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('drag-over');
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('drag-over');
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('drag-over');
+            const files = e.dataTransfer.files;
+            if (files.length) {
+                handleFile(files[0]);
+            }
+        });
+
+        // File input change
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length) {
+                handleFile(e.target.files[0]);
+            }
+        });
+
+        function handleFile(file) {
+            if (!file.name.endsWith('.zip')) {
+                showStatus('Only ZIP files are allowed', 'error');
+                return;
+            }
+
+            uploadFile(file);
+        }
+
+        function uploadFile(file) {
+            const formData = new FormData();
+            formData.append('file', file);
+
+            showStatus(`<span class="spinner"></span>Uploading...`, 'info');
+
+            fetch('/upload', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showStatus('✓ File uploaded successfully!', 'success');
+                    fileInput.value = '';
+                    updateFileStatus();
+                } else {
+                    showStatus('✗ ' + (data.error || 'Upload failed'), 'error');
+                }
+            })
+            .catch(error => {
+                showStatus('✗ Error: ' + error.message, 'error');
+            });
+        }
+
+        downloadBtn.addEventListener('click', () => {
+            window.location.href = '/download';
+        });
+
+        clearBtn.addEventListener('click', () => {
+            if (confirm('Are you sure you want to delete the uploaded file?')) {
+                // This would require a delete endpoint
+                showStatus('Clear functionality coming soon', 'info');
+            }
+        });
+
+        function showStatus(message, type) {
+            statusText.innerHTML = message;
+            statusBox.className = `status-box show ${type}`;
+            setTimeout(() => {
+                if (type !== 'error') {
+                    statusBox.classList.remove('show');
+                }
+            }, 5000);
+        }
+
+        function updateFileStatus() {
+            fetch('/status')
+            .then(response => response.json())
+            .then(data => {
+                if (data.has_file) {
+                    document.getElementById('infoFilename').textContent = data.filename;
+                    document.getElementById('infoSize').textContent = data.size_mb + ' MB';
+                    fileInfo.classList.add('show');
+                    downloadBtn.disabled = false;
+                    clearBtn.disabled = false;
+                } else {
+                    fileInfo.classList.remove('show');
+                    downloadBtn.disabled = true;
+                    clearBtn.disabled = true;
+                }
+            });
+        }
+
+        // Check status on page load
+        updateFileStatus();
+        // Check status every 5 seconds
+        setInterval(updateFileStatus, 5000);
+    </script>
+</body>
+</html>
